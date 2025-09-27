@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql_usermgmt
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: usermgmt_db
+      MYSQL_USER: fastapi
+      MYSQL_PASSWORD: fastapipass
+    ports:
+      - "3307:3306"   # Cambiamos el puerto a 3307 para no chocar con tu MySQL local
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro  #script que se ejecuta al iniciar
+
+volumes:
+  mysql_data:
