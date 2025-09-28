@@ -1,5 +1,5 @@
 -- Crear base de datos y tabla de clientes
-CREATE DATABASE IF NOT EXISTS usermgmt_db2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS usermgmt_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE usermgmt_db;
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -27,5 +27,6 @@ CREATE USER 'fastapi'@'%' IDENTIFIED WITH mysql_native_password BY 'fastapipass'
 
 -- Dar permisos sobre la base de datos
 GRANT ALL PRIVILEGES ON usermgmt_db.* TO 'fastapi'@'%';
+FLUSH PRIVILEGES;
 
 FLUSH PRIVILEGES;

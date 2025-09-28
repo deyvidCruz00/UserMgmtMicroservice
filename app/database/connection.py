@@ -8,10 +8,20 @@ from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
 load_dotenv()  # Asegurar que se cargan las variables de entorno
 
+# Obtener variables de entorno (siempre disponibles)
+DB_USER = os.getenv("DB_USER", "fastapi")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "fastapipass") 
+DB_HOST = os.getenv("DB_HOST", "mysql")  # Cambiar default a 'mysql' (nombre del contenedor)
+DB_PORT = os.getenv("DB_PORT", "3307")
+DB_NAME = os.getenv("DB_NAME", "usermgmt_db")
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    # Fallback usando credenciales probadas
-    DATABASE_URL = "mysql+pymysql://fastapi:fastapipass@localhost:3307/usermgmt_db"
+    # Construir URL desde variables de entorno individuales
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+print(f"Conectando a base de datos: {DATABASE_URL}")
+print(f"Variables de entorno - Host: {DB_HOST}, User: {DB_USER}, DB: {DB_NAME}")
 
 
 # Crear el engine de SQLAlchemy
@@ -20,11 +30,41 @@ try:
         DATABASE_URL,
         echo=False,  # Cambiar a True para debug SQL
         pool_pre_ping=True,
-        pool_recycle=300
+        pool_recycle=3600,  # Reciclar conexiones cada hora
+        connect_args={
+            "connect_timeout": 60,  # Timeout de conexión aumentado
+            "charset": "utf8mb4"
+        }
     )
+    print(f"✅ Database engine created successfully")
 except Exception as e:
-    print(f"Error creating database engine: {e}")
-    raise
+    print(f"❌ Error creating database engine: {e}")
+    print(f"Database URL: {DATABASE_URL}")
+    print(f"Error type: {type(e)}")
+    
+    # Intentar conexión simple para diagnóstico
+    try:
+        import pymysql
+        DB_HOST = os.getenv("DB_HOST", "mysql")
+        DB_PORT = os.getenv("DB_PORT", "3306") 
+        DB_USER = os.getenv("DB_USER", "fastapi")
+        DB_PASSWORD = os.getenv("DB_PASSWORD", "fastapipass")
+        DB_NAME = os.getenv("DB_NAME", "usermgmt_db")
+        
+        print(f"🔍 Testing direct connection to {DB_HOST}:{DB_PORT}")
+        conn = pymysql.connect(
+            host=DB_HOST,
+            port=int(DB_PORT),
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            connect_timeout=10
+        )
+        conn.close()
+        print("✅ Direct PyMySQL connection successful")
+    except Exception as direct_error:
+        print(f"❌ Direct connection also failed: {direct_error}")
+    raise e
 
 # Crear el SessionLocal
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
